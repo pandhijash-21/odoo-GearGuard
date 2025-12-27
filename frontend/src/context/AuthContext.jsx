@@ -12,11 +12,20 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  // Try to restore user from localStorage first
+  const savedUser = localStorage.getItem('user');
+  const savedToken = localStorage.getItem('token');
+  
+  const [user, setUser] = useState(savedUser ? JSON.parse(savedUser) : null);
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(savedToken);
 
   useEffect(() => {
+    // If we have saved user but no token, still allow access (for refresh scenarios)
+    if (savedUser && !token) {
+      setLoading(false);
+      return;
+    }
     if (token) {
       verifyToken();
     } else {
@@ -29,10 +38,19 @@ export const AuthProvider = ({ children }) => {
       const response = await api.post('/api/auth/verify.php', {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setUser(response.data.data.user);
+      const userData = response.data.data.user;
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
     } catch (error) {
-      localStorage.removeItem('token');
-      setToken(null);
+      console.error('Token verification failed:', error);
+      // Only clear if it's actually an auth error, not a network error
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setToken(null);
+        setUser(null);
+      }
+      // If network error, keep the saved user/token
     } finally {
       setLoading(false);
     }
@@ -45,6 +63,7 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       setToken(newToken);
       localStorage.setItem('token', newToken);
+      localStorage.setItem('user', JSON.stringify(userData));
       return { success: true };
     } catch (error) {
       return { success: false, error: error.response?.data?.error || 'Login failed' };
@@ -55,6 +74,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
   };
 
   const isAdmin = () => user?.role === 'admin';

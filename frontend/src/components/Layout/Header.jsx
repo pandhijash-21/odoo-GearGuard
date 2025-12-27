@@ -120,6 +120,19 @@ const Header = () => {
               >
                 Calendar
               </Button>
+              <Button 
+                color="inherit" 
+                onClick={() => navigate('/reports')}
+                sx={{
+                  fontWeight: 600,
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: 2,
+                  },
+                }}
+              >
+                📊 Reports
+              </Button>
             </>
           )}
           <Button 

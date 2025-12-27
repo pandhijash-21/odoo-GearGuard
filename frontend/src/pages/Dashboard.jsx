@@ -484,6 +484,26 @@ const Dashboard = () => {
                     </Button>
                   </>
                 )}
+                {(isAdmin() || isManager()) && (
+                  <Button 
+                    variant="outlined" 
+                    fullWidth
+                    size="large"
+                    onClick={() => navigate('/reports')}
+                    sx={{
+                      py: 1.5,
+                      borderWidth: 2,
+                      fontSize: '1rem',
+                      fontWeight: 600,
+                      '&:hover': {
+                        borderWidth: 2,
+                        bgcolor: 'action.hover',
+                      },
+                    }}
+                  >
+                    📊 View Reports
+                  </Button>
+                )}
               </Box>
             </CardContent>
           </Card>

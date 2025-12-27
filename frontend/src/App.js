@@ -13,6 +13,7 @@ import TeamsPage from './pages/TeamsPage';
 import RequestsPage from './pages/RequestsPage';
 import CalendarPage from './pages/CalendarPage';
 import CreateRequestPage from './pages/CreateRequestPage';
+import ReportsPage from './pages/ReportsPage';
 
 const theme = createTheme({
   palette: {

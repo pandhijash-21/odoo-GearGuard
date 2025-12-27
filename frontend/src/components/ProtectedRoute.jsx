@@ -14,11 +14,15 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     );
   }
 
-  if (!user) {
+  // Check localStorage as fallback (for refresh scenarios)
+  const savedUser = localStorage.getItem('user');
+  const currentUser = user || (savedUser ? JSON.parse(savedUser) : null);
+
+  if (!currentUser) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+  if (allowedRoles.length > 0 && !allowedRoles.includes(currentUser.role)) {
     return <Navigate to="/dashboard" replace />;
   }
 
