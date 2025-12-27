@@ -94,14 +94,15 @@ const RequestCard = ({ request, onRequestClick }) => {
       {...listeners}
       onClick={handleCardClick}
       sx={{
-        mb: 0,
+        mb: 2,
         cursor: 'pointer',
-        transition: 'all 0.2s',
+        transition: 'all 0.3s ease',
+        borderLeft: request.is_overdue ? '4px solid #ef4444' : `4px solid ${STAGE_COLORS[request.stage_name] || '#2563eb'}`,
+        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
         '&:hover': {
-          boxShadow: 4,
-          transform: 'translateY(-2px)',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+          transform: 'translateY(-4px)',
         },
-        borderLeft: request.is_overdue ? '4px solid #d32f2f' : '4px solid transparent',
       }}
     >
       <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>

@@ -42,8 +42,17 @@ const RequestsPage = () => {
 
   return (
     <Layout>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 600 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Typography 
+          variant="h4" 
+          sx={{ 
+            fontWeight: 700,
+            background: 'linear-gradient(135deg, #2563eb 0%, #8b5cf6 100%)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}
+        >
           Maintenance Requests
         </Typography>
         <Button 
@@ -51,6 +60,12 @@ const RequestsPage = () => {
           startIcon={<Add />} 
           size="large"
           onClick={() => navigate('/requests/create')}
+          sx={{
+            py: 1.5,
+            px: 3,
+            fontSize: '1rem',
+            fontWeight: 600,
+          }}
         >
           New Request
         </Button>

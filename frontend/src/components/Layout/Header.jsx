@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AppBar,
@@ -12,26 +12,31 @@ import {
   IconButton,
   Chip,
 } from '@mui/material';
-import { Logout, Person, Dashboard, Settings } from '@mui/icons-material';
+import {
+  Dashboard,
+  AccountCircle,
+  Logout,
+  Settings,
+} from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 
 const Header = () => {
-  const { user, logout, isAdmin, isManager, isTechnician } = useAuth();
   const navigate = useNavigate();
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  const { user, logout, isAdmin, isManager, isTechnician } = useAuth();
+  const [anchorEl, setAnchorEl] = useState(null);
 
-  const handleMenu = (event) => {
+  const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
   };
 
-  const handleClose = () => {
+  const handleMenuClose = () => {
     setAnchorEl(null);
   };
 
   const handleLogout = () => {
     logout();
+    handleMenuClose();
     navigate('/login');
-    handleClose();
   };
 
   const getRoleColor = (role) => {
@@ -44,22 +49,75 @@ const Header = () => {
   };
 
   return (
-    <AppBar position="static" elevation={2}>
-      <Toolbar>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 0, mr: 4, fontWeight: 'bold' }}>
-          GearGuard
+    <AppBar 
+      position="sticky" 
+      elevation={0}
+      sx={{
+        background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(10px)',
+      }}
+    >
+      <Toolbar sx={{ px: { xs: 2, md: 4 }, py: 1.5 }}>
+        <Typography
+          variant="h5"
+          component="div"
+          sx={{
+            fontWeight: 700,
+            background: 'linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            mr: 4,
+            cursor: 'pointer',
+            letterSpacing: '-0.02em',
+          }}
+          onClick={() => navigate('/dashboard')}
+        >
+          ⚙️ GearGuard
         </Typography>
         
         <Box sx={{ flexGrow: 1, display: 'flex', gap: 1 }}>
-          <Button color="inherit" onClick={() => navigate('/dashboard')} startIcon={<Dashboard />}>
+          <Button 
+            color="inherit" 
+            onClick={() => navigate('/dashboard')} 
+            startIcon={<Dashboard />}
+            sx={{
+              fontWeight: 600,
+              '&:hover': {
+                bgcolor: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: 2,
+              },
+            }}
+          >
             Dashboard
           </Button>
-          {(isManager() || isTechnician()) && (
+          {(isAdmin() || isManager() || isTechnician()) && (
             <>
-              <Button color="inherit" onClick={() => navigate('/requests')}>
+              <Button 
+                color="inherit" 
+                onClick={() => navigate('/requests')}
+                sx={{
+                  fontWeight: 600,
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: 2,
+                  },
+                }}
+              >
                 Requests
               </Button>
-              <Button color="inherit" onClick={() => navigate('/calendar')}>
+              <Button 
+                color="inherit" 
+                onClick={() => navigate('/calendar')}
+                sx={{
+                  fontWeight: 600,
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: 2,
+                  },
+                }}
+              >
                 Calendar
               </Button>
             </>
@@ -68,51 +126,130 @@ const Header = () => {
             color="inherit" 
             variant="outlined"
             onClick={() => navigate('/requests/create')}
-            sx={{ ml: 'auto', mr: 1 }}
+            sx={{ 
+              ml: 'auto',
+              mr: 2,
+              fontWeight: 600,
+              borderColor: 'rgba(255, 255, 255, 0.3)',
+              '&:hover': {
+                borderColor: 'rgba(255, 255, 255, 0.5)',
+                bgcolor: 'rgba(255, 255, 255, 0.1)',
+              },
+            }}
           >
-            New Request
+            ➕ New Request
           </Button>
           {isAdmin() && (
             <>
-              <Button color="inherit" onClick={() => navigate('/equipment')}>
+              <Button 
+                color="inherit" 
+                onClick={() => navigate('/equipment')}
+                sx={{
+                  fontWeight: 600,
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: 2,
+                  },
+                }}
+              >
                 Equipment
               </Button>
-              <Button color="inherit" onClick={() => navigate('/teams')}>
+              <Button 
+                color="inherit" 
+                onClick={() => navigate('/teams')}
+                sx={{
+                  fontWeight: 600,
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: 2,
+                  },
+                }}
+              >
                 Teams
               </Button>
-              <Button color="inherit" onClick={() => navigate('/calendar')}>
+              <Button 
+                color="inherit" 
+                onClick={() => navigate('/calendar')}
+                sx={{
+                  fontWeight: 600,
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: 2,
+                  },
+                }}
+              >
                 Calendar
               </Button>
             </>
           )}
         </Box>
 
-        {user && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', mr: 1 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: 'white' }}>
+              {user?.full_name || user?.email}
+            </Typography>
             <Chip
-              label={user.role.toUpperCase()}
-              color={getRoleColor(user.role)}
+              label={user?.role?.toUpperCase() || 'USER'}
               size="small"
+              color={getRoleColor(user?.role)}
+              sx={{
+                height: 20,
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                mt: 0.5,
+              }}
             />
-            <IconButton onClick={handleMenu} sx={{ p: 0 }}>
-              <Avatar sx={{ bgcolor: 'secondary.main' }}>
-                {user.full_name?.charAt(0) || user.email?.charAt(0) || 'U'}
-              </Avatar>
-            </IconButton>
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleClose}
-            >
-              <MenuItem onClick={() => { navigate('/profile'); handleClose(); }}>
-                <Person sx={{ mr: 1 }} /> Profile
-              </MenuItem>
-              <MenuItem onClick={handleLogout}>
-                <Logout sx={{ mr: 1 }} /> Logout
-              </MenuItem>
-            </Menu>
           </Box>
-        )}
+          <IconButton
+            onClick={handleMenuOpen}
+            sx={{
+              bgcolor: 'rgba(255, 255, 255, 0.1)',
+              '&:hover': {
+                bgcolor: 'rgba(255, 255, 255, 0.2)',
+              },
+            }}
+          >
+            <Avatar
+              sx={{
+                width: 36,
+                height: 36,
+                bgcolor: 'primary.main',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+              }}
+            >
+              {(user?.full_name || user?.email || 'U').charAt(0).toUpperCase()}
+            </Avatar>
+          </IconButton>
+        </Box>
+
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+          PaperProps={{
+            sx: {
+              mt: 1.5,
+              minWidth: 200,
+              borderRadius: 2,
+              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            },
+          }}
+        >
+          <MenuItem onClick={handleMenuClose}>
+            <AccountCircle sx={{ mr: 2 }} />
+            Profile
+          </MenuItem>
+          <MenuItem onClick={handleMenuClose}>
+            <Settings sx={{ mr: 2 }} />
+            Settings
+          </MenuItem>
+          <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
+            <Logout sx={{ mr: 2 }} />
+            Logout
+          </MenuItem>
+        </Menu>
       </Toolbar>
     </AppBar>
   );

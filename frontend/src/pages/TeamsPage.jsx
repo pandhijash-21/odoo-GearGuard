@@ -58,7 +58,16 @@ const TeamsPage = () => {
   return (
     <Layout>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 600 }}>
+        <Typography 
+          variant="h4" 
+          sx={{ 
+            fontWeight: 700,
+            background: 'linear-gradient(135deg, #2563eb 0%, #8b5cf6 100%)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}
+        >
           Maintenance Teams
         </Typography>
         <Button variant="contained" startIcon={<Add />} onClick={() => navigate('/teams/create')}>

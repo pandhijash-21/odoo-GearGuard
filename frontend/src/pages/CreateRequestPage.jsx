@@ -122,7 +122,18 @@ const CreateRequestPage = () => {
     <Layout>
       <Container maxWidth="md">
         <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
+          <Typography 
+            variant="h4" 
+            gutterBottom 
+            sx={{ 
+              fontWeight: 700,
+              mb: 3,
+              background: 'linear-gradient(135deg, #2563eb 0%, #8b5cf6 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
             Create Maintenance Request
           </Typography>
 
