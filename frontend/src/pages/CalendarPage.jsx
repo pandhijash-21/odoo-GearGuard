@@ -92,8 +92,11 @@ const CalendarPage = () => {
 
   const handleDateClick = (arg) => {
     // Navigate to create request with date pre-filled
-    const dateStr = arg.dateStr;
-    navigate(`/requests/create?scheduled_date=${dateStr}`);
+    const dateStr = arg.dateStr || (arg.start ? arg.start.toISOString().split('T')[0] : '');
+    // Format for datetime-local input: YYYY-MM-DDTHH:mm (default to 9 AM)
+    const date = new Date(dateStr + 'T09:00');
+    const formattedDate = date.toISOString().slice(0, 16);
+    navigate(`/requests/create?scheduled_date=${encodeURIComponent(formattedDate)}`);
   };
 
   const handleEventClick = (arg) => {
@@ -295,6 +298,7 @@ const CalendarPage = () => {
               weekends={true}
               dateClick={handleDateClick}
               eventClick={handleEventClick}
+              select={handleDateClick}
               headerToolbar={{
                 left: 'prev,next today',
                 center: 'title',

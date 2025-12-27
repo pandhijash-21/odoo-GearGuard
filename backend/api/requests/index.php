@@ -21,13 +21,24 @@ if ($method === 'GET') {
         $user_id = null;
         $user_role = null;
         
-        $headers = getallheaders();
-        $token = $headers['Authorization'] ?? str_replace('Bearer ', '', $_SERVER['HTTP_AUTHORIZATION'] ?? '');
+        // Get Authorization header - try multiple methods
+        $authHeader = '';
+        if (function_exists('getallheaders')) {
+            $headers = getallheaders();
+            $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
+        }
+        if (empty($authHeader)) {
+            $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+        }
+        
+        // Extract token (remove "Bearer " prefix if present)
+        $token = preg_replace('/^Bearer\s+/i', '', trim($authHeader));
+        
         if ($token) {
             $decoded = json_decode(base64_decode($token), true);
             if ($decoded && isset($decoded['user_id'])) {
-                $user_id = $decoded['user_id'];
-                $user_role = $decoded['role'] ?? null;
+                $user_id = (int)$decoded['user_id'];
+                $user_role = strtolower(trim($decoded['role'] ?? ''));
             }
         }
         
@@ -53,13 +64,13 @@ if ($method === 'GET') {
         
         // Role-based filtering
         if ($user_role === 'technician' && $user_id) {
-            // Technicians only see requests assigned to them
-            $sql .= " AND mr.assigned_to = :user_id";
-            $params[':user_id'] = $user_id;
+            // Technicians only see requests assigned to them (assigned_to must match user_id and not be NULL)
+            $sql .= " AND mr.assigned_to = :tech_user_id AND mr.assigned_to IS NOT NULL";
+            $params[':tech_user_id'] = $user_id;
         } elseif ($user_role === 'employee' && $user_id) {
             // Employees only see requests they created
-            $sql .= " AND mr.created_by = :user_id";
-            $params[':user_id'] = $user_id;
+            $sql .= " AND mr.created_by = :emp_user_id";
+            $params[':emp_user_id'] = $user_id;
         }
         // Admin and Manager see all requests (no filter)
         

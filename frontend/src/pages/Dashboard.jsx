@@ -128,7 +128,7 @@ const StatCard = ({ title, value, icon, color, subtitle }) => (
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, isAdmin, isManager, isTechnician } = useAuth();
+  const { user, isAdmin, isManager, isTechnician, isEmployee } = useAuth();
   const [stats, setStats] = useState({
     totalEquipment: 0,
     activeRequests: 0,
@@ -136,6 +136,8 @@ const Dashboard = () => {
     overdueRequests: 0,
   });
   const [recentRequests, setRecentRequests] = useState([]);
+  const [myRequests, setMyRequests] = useState([]);
+  const [otherRequests, setOtherRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -168,7 +170,19 @@ const Dashboard = () => {
         overdueRequests: overdueRequests.length,
       });
 
-      setRecentRequests(requests.slice(0, 5));
+      // For employees, separate requests into "my requests" and "others' requests"
+      if (isEmployee()) {
+        const myReqs = requests.filter(r => r.created_by === user?.user_id);
+        const otherReqs = requests.filter(r => r.created_by !== user?.user_id);
+        setMyRequests(myReqs.slice(0, 5));
+        setOtherRequests(otherReqs.slice(0, 5));
+      } else if (isTechnician()) {
+        // Technicians only see requests assigned to them (already filtered by backend)
+        // Just set the recent requests to show their assigned work
+        setRecentRequests(requests.slice(0, 5));
+      } else {
+        setRecentRequests(requests.slice(0, 5));
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -321,160 +335,485 @@ const Dashboard = () => {
           '& > .MuiGrid-item:nth-of-type(2)': { animationDelay: '0.18s' },
         }}
       >
-        {/* Recent Requests - 60% Width */}
+        {/* Requests Section - Different for Employees */}
         <Grid item xs={12} lg={8}>
-          <Card
-            elevation={0}
-            sx={{
-              height: '100%',
-              background: 'rgba(255, 255, 255, 0.9)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(102, 126, 234, 0.1)',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                boxShadow: '0 12px 28px -8px rgba(102, 126, 234, 0.15)',
-              },
-            }}
-          >
-            <CardContent sx={{ p: 2.5 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2.5 }}>
-                <Box
-                  sx={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    borderRadius: 2,
-                    p: 1,
-                    mr: 1.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-                  }}
-                >
-                  <Assignment sx={{ color: 'white', fontSize: 20 }} />
-                </Box>
+          {isEmployee() ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {/* My Requests Section */}
+              <Card
+                elevation={0}
+                sx={{
+                  height: '100%',
+                  background: 'rgba(255, 255, 255, 0.9)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(102, 126, 234, 0.1)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    boxShadow: '0 12px 28px -8px rgba(102, 126, 234, 0.15)',
+                  },
+                }}
+              >
+                <CardContent sx={{ p: 2.5 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2.5 }}>
+                    <Box
+                      sx={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        borderRadius: 2,
+                        p: 1,
+                        mr: 1.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                      }}
+                    >
+                      <Assignment sx={{ color: 'white', fontSize: 20 }} />
+                    </Box>
+                    <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.125rem' }}>
+                      Services Asked by Me
+                    </Typography>
+                  </Box>
+                  <List sx={{ p: 0 }}>
+                    {myRequests.length === 0 ? (
+                      <Box sx={{ textAlign: 'center', py: 4 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          No requests found
+                        </Typography>
+                      </Box>
+                    ) : (
+                      myRequests.map((request, index) => (
+                        <Box key={request.request_id}>
+                          <ListItem
+                            onClick={() => {
+                              setSelectedRequest(request);
+                              setDetailModalOpen(true);
+                            }}
+                            sx={{
+                              cursor: 'pointer',
+                              borderRadius: 2,
+                              mb: 0.5,
+                              py: 1.5,
+                              px: 1.5,
+                              transition: 'all 0.2s ease',
+                              border: '1px solid transparent',
+                              '&:hover': {
+                                bgcolor: 'action.hover',
+                                border: '1px solid',
+                                borderColor: 'primary.light',
+                                transform: 'translateX(4px)',
+                              },
+                            }}
+                          >
+                            <ListItemAvatar>
+                              <Avatar
+                                sx={{
+                                  bgcolor: request.is_overdue
+                                    ? 'error.main'
+                                    : request.request_type === 'Preventive'
+                                      ? 'info.main'
+                                      : 'primary.main',
+                                  width: 40,
+                                  height: 40,
+                                  boxShadow: request.is_overdue
+                                    ? '0 4px 12px rgba(239, 68, 68, 0.3)'
+                                    : '0 4px 12px rgba(37, 99, 235, 0.25)',
+                                }}
+                              >
+                                <Assignment sx={{ fontSize: 20 }} />
+                              </Avatar>
+                            </ListItemAvatar>
+                            <ListItemText
+                              primary={
+                                <Typography
+                                  variant="subtitle2"
+                                  sx={{
+                                    fontWeight: 600,
+                                    mb: 0.25,
+                                    fontSize: '0.9375rem',
+                                  }}
+                                >
+                                  {request.subject}
+                                </Typography>
+                              }
+                              secondary={
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ fontSize: '0.8125rem' }}
+                                  >
+                                    {request.equipment_name}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">•</Typography>
+                                  <Chip
+                                    label={request.stage_name}
+                                    size="small"
+                                    sx={{
+                                      height: 20,
+                                      fontSize: '0.6875rem',
+                                      fontWeight: 600,
+                                      bgcolor: request.stage_name === 'New'
+                                        ? 'info.light'
+                                        : request.stage_name === 'In Progress'
+                                          ? 'warning.light'
+                                          : 'success.light',
+                                      color: request.stage_name === 'New'
+                                        ? 'info.dark'
+                                        : request.stage_name === 'In Progress'
+                                          ? 'warning.dark'
+                                          : 'success.dark',
+                                    }}
+                                  />
+                                </Box>
+                              }
+                            />
+                            <Chip
+                              label={request.request_type}
+                              size="small"
+                              sx={{
+                                height: 24,
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                bgcolor: request.request_type === 'Preventive'
+                                  ? 'info.main'
+                                  : 'grey.200',
+                                color: request.request_type === 'Preventive'
+                                  ? 'white'
+                                  : 'text.primary',
+                              }}
+                            />
+                          </ListItem>
+                          {index < myRequests.length - 1 && (
+                            <Divider sx={{ my: 0.5 }} />
+                          )}
+                        </Box>
+                      ))
+                    )}
+                  </List>
+                </CardContent>
+              </Card>
+
+              {/* Others' Requests Section */}
+              <Card
+                elevation={0}
+                sx={{
+                  height: '100%',
+                  background: 'rgba(255, 255, 255, 0.9)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(102, 126, 234, 0.1)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    boxShadow: '0 12px 28px -8px rgba(102, 126, 234, 0.15)',
+                  },
+                }}
+              >
+                <CardContent sx={{ p: 2.5 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2.5 }}>
+                    <Box
+                      sx={{
+                        background: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)',
+                        borderRadius: 2,
+                        p: 1,
+                        mr: 1.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+                      }}
+                    >
+                      <Group sx={{ color: 'white', fontSize: 20 }} />
+                    </Box>
+                    <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.125rem' }}>
+                      Services Asked by Others
+                    </Typography>
+                  </Box>
+                  <List sx={{ p: 0 }}>
+                    {otherRequests.length === 0 ? (
+                      <Box sx={{ textAlign: 'center', py: 4 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          No requests found
+                        </Typography>
+                      </Box>
+                    ) : (
+                      otherRequests.map((request, index) => (
+                        <Box key={request.request_id}>
+                          <ListItem
+                            onClick={() => {
+                              setSelectedRequest(request);
+                              setDetailModalOpen(true);
+                            }}
+                            sx={{
+                              cursor: 'pointer',
+                              borderRadius: 2,
+                              mb: 0.5,
+                              py: 1.5,
+                              px: 1.5,
+                              transition: 'all 0.2s ease',
+                              border: '1px solid transparent',
+                              '&:hover': {
+                                bgcolor: 'action.hover',
+                                border: '1px solid',
+                                borderColor: 'primary.light',
+                                transform: 'translateX(4px)',
+                              },
+                            }}
+                          >
+                            <ListItemAvatar>
+                              <Avatar
+                                sx={{
+                                  bgcolor: request.is_overdue
+                                    ? 'error.main'
+                                    : request.request_type === 'Preventive'
+                                      ? 'info.main'
+                                      : 'primary.main',
+                                  width: 40,
+                                  height: 40,
+                                  boxShadow: request.is_overdue
+                                    ? '0 4px 12px rgba(239, 68, 68, 0.3)'
+                                    : '0 4px 12px rgba(37, 99, 235, 0.25)',
+                                }}
+                              >
+                                <Assignment sx={{ fontSize: 20 }} />
+                              </Avatar>
+                            </ListItemAvatar>
+                            <ListItemText
+                              primary={
+                                <Typography
+                                  variant="subtitle2"
+                                  sx={{
+                                    fontWeight: 600,
+                                    mb: 0.25,
+                                    fontSize: '0.9375rem',
+                                  }}
+                                >
+                                  {request.subject}
+                                </Typography>
+                              }
+                              secondary={
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ fontSize: '0.8125rem' }}
+                                  >
+                                    {request.equipment_name}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">•</Typography>
+                                  <Chip
+                                    label={request.stage_name}
+                                    size="small"
+                                    sx={{
+                                      height: 20,
+                                      fontSize: '0.6875rem',
+                                      fontWeight: 600,
+                                      bgcolor: request.stage_name === 'New'
+                                        ? 'info.light'
+                                        : request.stage_name === 'In Progress'
+                                          ? 'warning.light'
+                                          : 'success.light',
+                                      color: request.stage_name === 'New'
+                                        ? 'info.dark'
+                                        : request.stage_name === 'In Progress'
+                                          ? 'warning.dark'
+                                          : 'success.dark',
+                                    }}
+                                  />
+                                  <Typography variant="caption" color="text.secondary">•</Typography>
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ fontSize: '0.8125rem' }}
+                                  >
+                                    {request.created_by_name || 'Unknown'}
+                                  </Typography>
+                                </Box>
+                              }
+                            />
+                            <Chip
+                              label={request.request_type}
+                              size="small"
+                              sx={{
+                                height: 24,
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                bgcolor: request.request_type === 'Preventive'
+                                  ? 'info.main'
+                                  : 'grey.200',
+                                color: request.request_type === 'Preventive'
+                                  ? 'white'
+                                  : 'text.primary',
+                              }}
+                            />
+                          </ListItem>
+                          {index < otherRequests.length - 1 && (
+                            <Divider sx={{ my: 0.5 }} />
+                          )}
+                        </Box>
+                      ))
+                    )}
+                  </List>
+                </CardContent>
+              </Card>
+            </Box>
+          ) : (
+            <Card
+              elevation={0}
+              sx={{
+                height: '100%',
+                background: 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(102, 126, 234, 0.1)',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  boxShadow: '0 12px 28px -8px rgba(102, 126, 234, 0.15)',
+                },
+              }}
+            >
+              <CardContent sx={{ p: 2.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2.5 }}>
+                  <Box
+                    sx={{
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      borderRadius: 2,
+                      p: 1,
+                      mr: 1.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                    }}
+                  >
+                    <Assignment sx={{ color: 'white', fontSize: 20 }} />
+                  </Box>
                 <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.125rem' }}>
-                  Recent Requests
+                  {isTechnician() ? 'My Assigned Requests' : 'Recent Requests'}
                 </Typography>
               </Box>
+              {isTechnician() && (
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontSize: '0.875rem', ml: 7 }}>
+                  Showing only requests assigned to you
+                </Typography>
+              )}
               <List sx={{ p: 0 }}>
                 {recentRequests.length === 0 ? (
                   <Box sx={{ textAlign: 'center', py: 4 }}>
                     <Typography variant="body2" color="text.secondary">
-                      No requests found
+                      {isTechnician() ? 'No requests assigned to you' : 'No requests found'}
                     </Typography>
                   </Box>
                 ) : (
-                  recentRequests.map((request, index) => (
-                    <Box key={request.request_id}>
-                      <ListItem
-                        onClick={() => {
-                          setSelectedRequest(request);
-                          setDetailModalOpen(true);
-                        }}
-                        sx={{
-                          cursor: 'pointer',
-                          borderRadius: 2,
-                          mb: 0.5,
-                          py: 1.5,
-                          px: 1.5,
-                          transition: 'all 0.2s ease',
-                          border: '1px solid transparent',
-                          '&:hover': {
-                            bgcolor: 'action.hover',
-                            border: '1px solid',
-                            borderColor: 'primary.light',
-                            transform: 'translateX(4px)',
-                          },
-                        }}
-                      >
-                        <ListItemAvatar>
-                          <Avatar
-                            sx={{
-                              bgcolor: request.is_overdue
-                                ? 'error.main'
-                                : request.request_type === 'Preventive'
-                                  ? 'info.main'
-                                  : 'primary.main',
-                              width: 40,
-                              height: 40,
-                              boxShadow: request.is_overdue
-                                ? '0 4px 12px rgba(239, 68, 68, 0.3)'
-                                : '0 4px 12px rgba(37, 99, 235, 0.25)',
-                            }}
-                          >
-                            <Assignment sx={{ fontSize: 20 }} />
-                          </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={
-                            <Typography
-                              variant="subtitle2"
+                    recentRequests.map((request, index) => (
+                      <Box key={request.request_id}>
+                        <ListItem
+                          onClick={() => {
+                            setSelectedRequest(request);
+                            setDetailModalOpen(true);
+                          }}
+                          sx={{
+                            cursor: 'pointer',
+                            borderRadius: 2,
+                            mb: 0.5,
+                            py: 1.5,
+                            px: 1.5,
+                            transition: 'all 0.2s ease',
+                            border: '1px solid transparent',
+                            '&:hover': {
+                              bgcolor: 'action.hover',
+                              border: '1px solid',
+                              borderColor: 'primary.light',
+                              transform: 'translateX(4px)',
+                            },
+                          }}
+                        >
+                          <ListItemAvatar>
+                            <Avatar
                               sx={{
-                                fontWeight: 600,
-                                mb: 0.25,
-                                fontSize: '0.9375rem',
+                                bgcolor: request.is_overdue
+                                  ? 'error.main'
+                                  : request.request_type === 'Preventive'
+                                    ? 'info.main'
+                                    : 'primary.main',
+                                width: 40,
+                                height: 40,
+                                boxShadow: request.is_overdue
+                                  ? '0 4px 12px rgba(239, 68, 68, 0.3)'
+                                  : '0 4px 12px rgba(37, 99, 235, 0.25)',
                               }}
                             >
-                              {request.subject}
-                            </Typography>
-                          }
-                          secondary={
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                              <Assignment sx={{ fontSize: 20 }} />
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={
                               <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                sx={{ fontSize: '0.8125rem' }}
-                              >
-                                {request.equipment_name}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">•</Typography>
-                              <Chip
-                                label={request.stage_name}
-                                size="small"
+                                variant="subtitle2"
                                 sx={{
-                                  height: 20,
-                                  fontSize: '0.6875rem',
                                   fontWeight: 600,
-                                  bgcolor: request.stage_name === 'New'
-                                    ? 'info.light'
-                                    : request.stage_name === 'In Progress'
-                                      ? 'warning.light'
-                                      : 'success.light',
-                                  color: request.stage_name === 'New'
-                                    ? 'info.dark'
-                                    : request.stage_name === 'In Progress'
-                                      ? 'warning.dark'
-                                      : 'success.dark',
+                                  mb: 0.25,
+                                  fontSize: '0.9375rem',
                                 }}
-                              />
-                            </Box>
-                          }
-                        />
-                        <Chip
-                          label={request.request_type}
-                          size="small"
-                          sx={{
-                            height: 24,
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            bgcolor: request.request_type === 'Preventive'
-                              ? 'info.main'
-                              : 'grey.200',
-                            color: request.request_type === 'Preventive'
-                              ? 'white'
-                              : 'text.primary',
-                          }}
-                        />
-                      </ListItem>
-                      {index < recentRequests.length - 1 && (
-                        <Divider sx={{ my: 0.5 }} />
-                      )}
-                    </Box>
-                  ))
-                )}
-              </List>
-            </CardContent>
-          </Card>
+                              >
+                                {request.subject}
+                              </Typography>
+                            }
+                            secondary={
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  sx={{ fontSize: '0.8125rem' }}
+                                >
+                                  {request.equipment_name}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">•</Typography>
+                                <Chip
+                                  label={request.stage_name}
+                                  size="small"
+                                  sx={{
+                                    height: 20,
+                                    fontSize: '0.6875rem',
+                                    fontWeight: 600,
+                                    bgcolor: request.stage_name === 'New'
+                                      ? 'info.light'
+                                      : request.stage_name === 'In Progress'
+                                        ? 'warning.light'
+                                        : 'success.light',
+                                    color: request.stage_name === 'New'
+                                      ? 'info.dark'
+                                      : request.stage_name === 'In Progress'
+                                        ? 'warning.dark'
+                                        : 'success.dark',
+                                  }}
+                                />
+                              </Box>
+                            }
+                          />
+                          <Chip
+                            label={request.request_type}
+                            size="small"
+                            sx={{
+                              height: 24,
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              bgcolor: request.request_type === 'Preventive'
+                                ? 'info.main'
+                                : 'grey.200',
+                              color: request.request_type === 'Preventive'
+                                ? 'white'
+                                : 'text.primary',
+                            }}
+                          />
+                        </ListItem>
+                        {index < recentRequests.length - 1 && (
+                          <Divider sx={{ my: 0.5 }} />
+                        )}
+                      </Box>
+                    ))
+                  )}
+                </List>
+              </CardContent>
+            </Card>
+          )}
         </Grid>
 
         {/* Quick Actions - 40% Width */}

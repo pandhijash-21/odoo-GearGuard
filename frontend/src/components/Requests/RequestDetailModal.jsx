@@ -27,8 +27,10 @@ import {
 } from '@mui/icons-material';
 import { STAGE_COLORS, REQUEST_TYPES } from '../../utils/constants';
 import { updateRequestStage } from '../../services/requestService';
+import { useAuth } from '../../context/AuthContext';
 
 const RequestDetailModal = ({ open, onClose, request: initialRequest, onUpdate }) => {
+  const { isAdmin, isTechnician } = useAuth();
   const [request, setRequest] = useState(initialRequest);
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -321,7 +323,7 @@ const RequestDetailModal = ({ open, onClose, request: initialRequest, onUpdate }
 
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
-        {onUpdate && (
+        {onUpdate && (isAdmin() || isTechnician()) && (
           <Button
             variant="contained"
             onClick={handleMenuClick}

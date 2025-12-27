@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Container,
   Paper,
@@ -24,6 +24,7 @@ import { REQUEST_TYPES, PRIORITIES } from '../utils/constants';
 
 const CreateRequestPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -44,7 +45,18 @@ const CreateRequestPage = () => {
   useEffect(() => {
     fetchEquipment();
     fetchTeams();
-  }, []);
+    
+    // Check if scheduled_date is in URL params (from calendar click)
+    const scheduledDate = searchParams.get('scheduled_date');
+    if (scheduledDate) {
+      // Use the date directly (already formatted for datetime-local)
+      setFormData(prev => ({
+        ...prev,
+        scheduled_date: decodeURIComponent(scheduledDate),
+        request_type: 'Preventive' // Default to Preventive for scheduled maintenance
+      }));
+    }
+  }, [searchParams]);
 
   const fetchTeams = async () => {
     try {
@@ -252,22 +264,20 @@ const CreateRequestPage = () => {
                 </Typography>
               </Grid>
 
-              {formData.request_type === 'Preventive' && (
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Scheduled Date"
-                    name="scheduled_date"
-                    type="datetime-local"
-                    value={formData.scheduled_date}
-                    onChange={handleChange}
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                    helperText="When should the work happen?"
-                  />
-                </Grid>
-              )}
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Scheduled Date (Optional)"
+                  name="scheduled_date"
+                  type="datetime-local"
+                  value={formData.scheduled_date}
+                  onChange={handleChange}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  helperText={formData.scheduled_date ? "Date selected from calendar - Click date on calendar to schedule" : "When should the work happen? (Click date on calendar to pre-fill)"}
+                />
+              </Grid>
 
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>

@@ -68,7 +68,7 @@ const Header = () => {
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon />, roles: ['admin', 'manager', 'technician'] },
     { label: 'Requests', path: '/requests', icon: <Assignment />, roles: ['admin', 'manager', 'technician'] },
-    { label: 'Calendar', path: '/calendar', icon: <CalendarMonth />, roles: ['admin', 'manager', 'technician'] },
+    { label: 'Calendar', path: '/calendar', icon: <CalendarMonth />, roles: ['admin', 'manager', 'technician', 'employee'] },
     { label: 'Reports', path: '/reports', icon: <Assessment />, roles: ['admin', 'manager'] },
     { label: 'Equipment', path: '/equipment', icon: <Build />, roles: ['admin'] },
     { label: 'Teams', path: '/teams', icon: <Group />, roles: ['admin'] },

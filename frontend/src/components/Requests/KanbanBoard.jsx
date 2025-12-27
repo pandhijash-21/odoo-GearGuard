@@ -18,9 +18,10 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { STAGE_COLORS } from '../../utils/constants';
 import { updateRequestStage } from '../../services/requestService';
+import { useAuth } from '../../context/AuthContext';
 import { Assignment, Person } from '@mui/icons-material';
 
-const KanbanColumn = ({ id, title, items, color, onRequestClick }) => {
+const KanbanColumn = ({ id, title, items, color, onRequestClick, canDrag = true }) => {
   return (
     <Box
       sx={{
@@ -40,7 +41,7 @@ const KanbanColumn = ({ id, title, items, color, onRequestClick }) => {
       <SortableContext items={items.map((item) => item.request_id)} strategy={verticalListSortingStrategy}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           {items.map((item) => (
-            <RequestCard key={item.request_id} request={item} onRequestClick={onRequestClick} />
+            <RequestCard key={item.request_id} request={item} onRequestClick={onRequestClick} canDrag={canDrag} />
           ))}
           {items.length === 0 && (
             <Box
@@ -61,9 +62,10 @@ const KanbanColumn = ({ id, title, items, color, onRequestClick }) => {
   );
 };
 
-const RequestCard = ({ request, onRequestClick }) => {
+const RequestCard = ({ request, onRequestClick, canDrag = true }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: request.request_id,
+    disabled: !canDrag,
   });
 
   const style = {
@@ -157,6 +159,7 @@ const RequestCard = ({ request, onRequestClick }) => {
 };
 
 const KanbanBoard = ({ requests, onUpdate, onRequestClick }) => {
+  const { isAdmin, isTechnician } = useAuth();
   const [activeId, setActiveId] = useState(null);
   const [stages, setStages] = useState(['New', 'In Progress', 'Repaired', 'Scrap']);
 
@@ -184,6 +187,11 @@ const KanbanBoard = ({ requests, onUpdate, onRequestClick }) => {
     setActiveId(null);
 
     if (!over) return;
+
+    // Only allow status updates for admins and technicians
+    if (!isAdmin() && !isTechnician()) {
+      return;
+    }
 
     const activeRequest = requests.find((r) => r.request_id === active.id);
     const overStage = over.id.toString();
@@ -232,6 +240,7 @@ const KanbanBoard = ({ requests, onUpdate, onRequestClick }) => {
             items={getRequestsByStage(stage)}
             color={STAGE_COLORS[stage]}
             onRequestClick={onRequestClick}
+            canDrag={isAdmin() || isTechnician()}
           />
         ))}
       </Box>
