@@ -20,7 +20,7 @@ import { STAGE_COLORS } from '../../utils/constants';
 import { updateRequestStage } from '../../services/requestService';
 import { Assignment, Person } from '@mui/icons-material';
 
-const KanbanColumn = ({ id, title, items, color }) => {
+const KanbanColumn = ({ id, title, items, color, onRequestClick }) => {
   return (
     <Box
       sx={{
@@ -40,7 +40,7 @@ const KanbanColumn = ({ id, title, items, color }) => {
       <SortableContext items={items.map((item) => item.request_id)} strategy={verticalListSortingStrategy}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           {items.map((item) => (
-            <RequestCard key={item.request_id} request={item} />
+            <RequestCard key={item.request_id} request={item} onRequestClick={onRequestClick} />
           ))}
           {items.length === 0 && (
             <Box
@@ -61,7 +61,7 @@ const KanbanColumn = ({ id, title, items, color }) => {
   );
 };
 
-const RequestCard = ({ request }) => {
+const RequestCard = ({ request, onRequestClick }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: request.request_id,
   });
@@ -79,16 +79,23 @@ const RequestCard = ({ request }) => {
     low: 'default',
   };
 
+  const handleCardClick = (e) => {
+    // Don't trigger click when dragging
+    if (!isDragging && onRequestClick) {
+      onRequestClick(request);
+    }
+  };
+
   return (
     <Card
       ref={setNodeRef}
       style={style}
       {...attributes}
       {...listeners}
+      onClick={handleCardClick}
       sx={{
         mb: 0,
-        cursor: 'grab',
-        '&:active': { cursor: 'grabbing' },
+        cursor: 'pointer',
         transition: 'all 0.2s',
         '&:hover': {
           boxShadow: 4,
@@ -148,7 +155,7 @@ const RequestCard = ({ request }) => {
   );
 };
 
-const KanbanBoard = ({ requests, onUpdate }) => {
+const KanbanBoard = ({ requests, onUpdate, onRequestClick }) => {
   const [activeId, setActiveId] = useState(null);
   const [stages, setStages] = useState(['New', 'In Progress', 'Repaired', 'Scrap']);
 
@@ -223,6 +230,7 @@ const KanbanBoard = ({ requests, onUpdate }) => {
             title={stage}
             items={getRequestsByStage(stage)}
             color={STAGE_COLORS[stage]}
+            onRequestClick={onRequestClick}
           />
         ))}
       </Box>

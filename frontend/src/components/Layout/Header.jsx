@@ -54,7 +54,7 @@ const Header = () => {
           <Button color="inherit" onClick={() => navigate('/dashboard')} startIcon={<Dashboard />}>
             Dashboard
           </Button>
-          {(isAdmin() || isManager() || isTechnician()) && (
+          {(isManager() || isTechnician()) && (
             <>
               <Button color="inherit" onClick={() => navigate('/requests')}>
                 Requests
@@ -79,6 +79,9 @@ const Header = () => {
               </Button>
               <Button color="inherit" onClick={() => navigate('/teams')}>
                 Teams
+              </Button>
+              <Button color="inherit" onClick={() => navigate('/calendar')}>
+                Calendar
               </Button>
             </>
           )}

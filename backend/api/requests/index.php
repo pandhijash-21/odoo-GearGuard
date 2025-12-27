@@ -1,22 +1,46 @@
 <?php
+// CORS headers
+header('Access-Control-Allow-Origin: http://localhost:3000');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Content-Type: application/json');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
 require_once '../../config/database.php';
 require_once '../../utils/response.php';
-require_once '../../utils/cors.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
     try {
+        // Get user info from token (simple decode - in production use JWT)
+        $user_id = null;
+        $user_role = null;
+        
+        $headers = getallheaders();
+        $token = $headers['Authorization'] ?? str_replace('Bearer ', '', $_SERVER['HTTP_AUTHORIZATION'] ?? '');
+        if ($token) {
+            $decoded = json_decode(base64_decode($token), true);
+            if ($decoded && isset($decoded['user_id'])) {
+                $user_id = $decoded['user_id'];
+                $user_role = $decoded['role'] ?? null;
+            }
+        }
+        
         $stage = $_GET['stage'] ?? null;
         $equipment_id = $_GET['equipment_id'] ?? null;
         $team_id = $_GET['team_id'] ?? null;
         
         $sql = "SELECT mr.*, 
-                e.equipment_name, e.serial_number,
+                e.equipment_name, e.serial_number, e.location as equipment_location,
                 rs.stage_name,
                 mt.team_name,
-                u1.full_name as assigned_to_name, u1.avatar_url as assigned_to_avatar,
-                u2.full_name as created_by_name
+                u1.full_name as assigned_to_name, u1.avatar_url as assigned_to_avatar, u1.email as assigned_to_email,
+                u2.full_name as created_by_name, u2.email as created_by_email
                 FROM maintenance_requests mr
                 LEFT JOIN equipment e ON mr.equipment_id = e.equipment_id
                 LEFT JOIN request_stages rs ON mr.stage_id = rs.stage_id
@@ -26,6 +50,19 @@ if ($method === 'GET') {
                 WHERE 1=1";
         
         $params = [];
+        
+        // Role-based filtering
+        if ($user_role === 'technician' && $user_id) {
+            // Technicians only see requests assigned to them
+            $sql .= " AND mr.assigned_to = :user_id";
+            $params[':user_id'] = $user_id;
+        } elseif ($user_role === 'employee' && $user_id) {
+            // Employees only see requests they created
+            $sql .= " AND mr.created_by = :user_id";
+            $params[':user_id'] = $user_id;
+        }
+        // Admin and Manager see all requests (no filter)
+        
         if ($stage) {
             $sql .= " AND rs.stage_name = :stage";
             $params[':stage'] = $stage;

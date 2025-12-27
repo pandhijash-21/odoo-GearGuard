@@ -28,6 +28,7 @@ import { useAuth } from '../context/AuthContext';
 import { getRequests } from '../services/requestService';
 import { getEquipment } from '../services/equipmentService';
 import { getTeams } from '../services/teamService';
+import RequestDetailModal from '../components/Requests/RequestDetailModal';
 
 const StatCard = ({ title, value, icon, color, subtitle }) => (
   <Card elevation={2} sx={{ height: '100%' }}>
@@ -65,6 +66,8 @@ const Dashboard = () => {
   });
   const [recentRequests, setRecentRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -175,7 +178,18 @@ const Dashboard = () => {
                   </Typography>
                 ) : (
                   recentRequests.map((request) => (
-                    <ListItem key={request.request_id} divider>
+                    <ListItem 
+                      key={request.request_id} 
+                      divider
+                      onClick={() => {
+                        setSelectedRequest(request);
+                        setDetailModalOpen(true);
+                      }}
+                      sx={{
+                        cursor: 'pointer',
+                        '&:hover': { bgcolor: 'action.hover' },
+                      }}
+                    >
                       <ListItemAvatar>
                         <Avatar sx={{ bgcolor: request.is_overdue ? 'error.main' : 'primary.main' }}>
                           <Assignment />
@@ -244,6 +258,16 @@ const Dashboard = () => {
           </Card>
         </Grid>
       </Grid>
+
+      <RequestDetailModal
+        open={detailModalOpen}
+        onClose={() => {
+          setDetailModalOpen(false);
+          setSelectedRequest(null);
+        }}
+        request={selectedRequest}
+        onUpdate={fetchData}
+      />
     </Layout>
   );
 };

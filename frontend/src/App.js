@@ -7,6 +7,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './components/Auth/Login';
 import Dashboard from './pages/Dashboard';
 import EquipmentPage from './pages/EquipmentPage';
+import EquipmentDetailPage from './pages/EquipmentDetailPage';
+import EquipmentEditPage from './pages/EquipmentEditPage';
 import TeamsPage from './pages/TeamsPage';
 import RequestsPage from './pages/RequestsPage';
 import CalendarPage from './pages/CalendarPage';
@@ -69,6 +71,22 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={['admin']}>
             <EquipmentPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/equipment/:id"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <EquipmentDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/equipment/:id/edit"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <EquipmentEditPage />
           </ProtectedRoute>
         }
       />
