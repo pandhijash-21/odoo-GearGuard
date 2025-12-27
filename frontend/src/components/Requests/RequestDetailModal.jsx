@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -12,6 +12,8 @@ import {
   Grid,
   Avatar,
   Paper,
+  Menu,
+  MenuItem
 } from '@mui/material';
 import {
   Assignment,
@@ -21,11 +23,55 @@ import {
   AccessTime,
   Description,
   LocationOn,
+  KeyboardArrowDown as KeyboardArrowDownIcon
 } from '@mui/icons-material';
 import { STAGE_COLORS, REQUEST_TYPES } from '../../utils/constants';
+import { updateRequestStage } from '../../services/requestService';
 
-const RequestDetailModal = ({ open, onClose, request, onUpdate }) => {
+const RequestDetailModal = ({ open, onClose, request: initialRequest, onUpdate }) => {
+  const [request, setRequest] = useState(initialRequest);
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  useEffect(() => {
+    setRequest(initialRequest);
+  }, [initialRequest]);
+
   if (!request) return null;
+
+
+
+  const stageIdMap = {
+    'New': 1,
+    'In Progress': 2,
+    'Repaired': 3,
+    'Scrap': 4,
+  };
+
+  const handleMenuClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleStageUpdate = async (stageName) => {
+    try {
+      const stageId = stageIdMap[stageName];
+      if (!stageId) return;
+
+      await updateRequestStage(request.request_id, stageId);
+
+      // Optimistic update of local UI
+      setRequest(prev => ({ ...prev, stage_name: stageName }));
+
+      if (onUpdate) onUpdate();
+      handleMenuClose();
+    } catch (error) {
+      console.error('Failed to update status', error);
+      alert('Failed to update: ' + (error.response?.data?.error || 'Unknown error'));
+    }
+  };
 
   const priorityColors = {
     urgent: 'error',
@@ -276,10 +322,40 @@ const RequestDetailModal = ({ open, onClose, request, onUpdate }) => {
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
         {onUpdate && (
-          <Button variant="contained" onClick={onUpdate}>
+          <Button
+            variant="contained"
+            onClick={handleMenuClick}
+            endIcon={<KeyboardArrowDownIcon />}
+          >
             Update Status
           </Button>
         )}
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+        >
+          {Object.keys(stageIdMap).map((stage) => (
+            <MenuItem
+              key={stage}
+              onClick={() => handleStageUpdate(stage)}
+              selected={request.stage_name === stage}
+              disabled={request.stage_name === stage}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box
+                  sx={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: '50%',
+                    bgcolor: STAGE_COLORS[stage]
+                  }}
+                />
+                {stage}
+              </Box>
+            </MenuItem>
+          ))}
+        </Menu>
       </DialogActions>
     </Dialog>
   );

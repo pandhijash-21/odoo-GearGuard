@@ -8,7 +8,6 @@ import {
   LinearProgress,
   Tabs,
   Tab,
-  Paper,
   Table,
   TableBody,
   TableCell,
@@ -17,6 +16,8 @@ import {
   TableRow,
   Chip,
   Alert,
+  Button,
+  Fade,
 } from '@mui/material';
 import {
   BarChart,
@@ -30,11 +31,21 @@ import {
   PieChart,
   Pie,
   Cell,
+  LineChart,
+  Line,
 } from 'recharts';
+import {
+  Assessment,
+  Refresh,
+  TrendingUp,
+  Group,
+  Category,
+  PriorityHigh,
+} from '@mui/icons-material';
 import Layout from '../components/Layout/Layout';
 import api from '../services/api';
 
-const COLORS = ['#2563eb', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4'];
+const COLORS = ['#667eea', '#764ba2', '#10b981', '#f59e0b', '#ef4444', '#06b6d4'];
 
 const ReportsPage = () => {
   const [loading, setLoading] = useState(true);
@@ -56,8 +67,7 @@ const ReportsPage = () => {
       setLoading(true);
       setError(null);
       const response = await api.get('/api/reports/');
-      console.log('Reports API Response:', response);
-      
+
       // Handle different response structures
       let reportsData = {};
       if (response.data) {
@@ -69,7 +79,7 @@ const ReportsPage = () => {
           reportsData = response.data;
         }
       }
-      
+
       // Ensure all required keys exist
       setReports({
         by_team: reportsData.by_team || [],
@@ -79,7 +89,6 @@ const ReportsPage = () => {
       });
     } catch (error) {
       console.error('Error fetching reports:', error);
-      console.error('Error response:', error.response);
       setError(error.response?.data?.error || 'Failed to load reports. Please check if the backend server is running.');
       // Set empty state on error
       setReports({
@@ -97,36 +106,13 @@ const ReportsPage = () => {
     setTabValue(newValue);
   };
 
-  if (loading) {
-    return (
-      <Layout>
-        <Box sx={{ mb: 4 }}>
-          <Typography
-            variant="h4"
-            sx={{
-              fontWeight: 700,
-              background: 'linear-gradient(135deg, #2563eb 0%, #8b5cf6 100%)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              mb: 1,
-            }}
-          >
-            📊 Reports & Analytics
-          </Typography>
-        </Box>
-        <LinearProgress />
-      </Layout>
-    );
-  }
-
   // Prepare data for charts
   const teamChartData = reports.by_team?.map((item) => ({
     name: item.team_name || 'Unassigned',
     total: parseInt(item.total_requests || 0),
     new: parseInt(item.new_requests || 0),
     inProgress: parseInt(item.in_progress_requests || 0),
-    repaired: parseInt(item.repaired_requests || 0),
+    completed: parseInt(item.repaired_requests || 0),
     overdue: parseInt(item.overdue_requests || 0),
   })) || [];
 
@@ -135,7 +121,7 @@ const ReportsPage = () => {
     total: parseInt(item.total_requests || 0),
     new: parseInt(item.new_requests || 0),
     inProgress: parseInt(item.in_progress_requests || 0),
-    repaired: parseInt(item.repaired_requests || 0),
+    completed: parseInt(item.repaired_requests || 0),
     overdue: parseInt(item.overdue_requests || 0),
   })) || [];
 
@@ -146,417 +132,663 @@ const ReportsPage = () => {
 
   return (
     <Layout>
-      <Box sx={{ mb: 4 }}>
-        <Typography
-          variant="h4"
-          sx={{
-            fontWeight: 700,
-            background: 'linear-gradient(135deg, #2563eb 0%, #8b5cf6 100%)',
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            mb: 1,
-          }}
-        >
-          📊 Reports & Analytics
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Analyze maintenance requests by team, category, and priority
-        </Typography>
+      {/* Header */}
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: 2,
+        }}>
+          <Box>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 800,
+                color: '#1e293b',
+                mb: 0.5,
+                fontSize: { xs: '1.5rem', md: '1.875rem' },
+              }}
+            >
+              Reports & Analytics
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#64748b' }}>
+              Analyze maintenance requests by team, category, and priority
+            </Typography>
+          </Box>
+          <Button
+            variant="outlined"
+            startIcon={<Refresh />}
+            onClick={fetchReports}
+            disabled={loading}
+            sx={{
+              px: 3,
+              py: 1.2,
+              fontWeight: 600,
+              borderWidth: 2,
+              '&:hover': {
+                borderWidth: 2,
+                transform: 'translateY(-2px)',
+              },
+              transition: 'all 0.2s ease',
+            }}
+          >
+            Refresh Data
+          </Button>
+        </Box>
       </Box>
 
+      {/* Error Alert */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
 
-      {/* Overall Statistics */}
-      {reports.overall && reports.overall !== null && Object.keys(reports.overall).length > 0 && (
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card
-              sx={{
-                background: 'linear-gradient(135deg, #2563eb15 0%, #3b82f608 100%)',
-                border: '1px solid #2563eb20',
-              }}
-            >
-              <CardContent>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Total Requests
-                </Typography>
-                <Typography variant="h3" sx={{ fontWeight: 700, color: '#2563eb' }}>
-                  {reports.overall.total_requests || 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card
-              sx={{
-                background: 'linear-gradient(135deg, #10b98115 0%, #34d39908 100%)',
-                border: '1px solid #10b98120',
-              }}
-            >
-              <CardContent>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Repaired
-                </Typography>
-                <Typography variant="h3" sx={{ fontWeight: 700, color: '#10b981' }}>
-                  {reports.overall.repaired_count || 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card
-              sx={{
-                background: 'linear-gradient(135deg, #f59e0b15 0%, #fbbf2408 100%)',
-                border: '1px solid #f59e0b20',
-              }}
-            >
-              <CardContent>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  In Progress
-                </Typography>
-                <Typography variant="h3" sx={{ fontWeight: 700, color: '#f59e0b' }}>
-                  {reports.overall.in_progress_count || 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card
-              sx={{
-                background: 'linear-gradient(135deg, #ef444415 0%, #f8717108 100%)',
-                border: '1px solid #ef444420',
-              }}
-            >
-              <CardContent>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Overdue
-                </Typography>
-                <Typography variant="h3" sx={{ fontWeight: 700, color: '#ef4444' }}>
-                  {reports.overall.overdue_count || 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      )}
+      {loading ? (
+        <Card elevation={0} sx={{ p: 3, border: '1px solid rgba(102, 126, 234, 0.1)' }}>
+          <LinearProgress />
+          <Typography variant="body2" sx={{ textAlign: 'center', mt: 2, color: '#64748b' }}>
+            Loading reports...
+          </Typography>
+        </Card>
+      ) : (
+        <Fade in timeout={600}>
+          <Box>
+            {/* Overall Statistics */}
+            {reports.overall && Object.keys(reports.overall).length > 0 && (
+              <Grid container spacing={2.5} sx={{ mb: 3 }}>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card
+                    elevation={0}
+                    sx={{
+                      background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%)',
+                      border: '2px solid rgba(102, 126, 234, 0.2)',
+                      borderRadius: 2,
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 12px 24px rgba(102, 126, 234, 0.15)',
+                      },
+                    }}
+                  >
+                    <CardContent sx={{ p: 2.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                        <Box
+                          sx={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 2,
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Assessment sx={{ color: 'white', fontSize: 20 }} />
+                        </Box>
+                        <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.6875rem' }}>
+                          Total Requests
+                        </Typography>
+                      </Box>
+                      <Typography variant="h3" sx={{ fontWeight: 800, color: '#667eea' }}>
+                        {reports.overall.total_requests || 0}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
 
-      {/* Tabs */}
-      <Paper sx={{ mb: 3, borderRadius: 2 }}>
-        <Tabs
-          value={tabValue}
-          onChange={handleTabChange}
-          variant="scrollable"
-          scrollButtons="auto"
-          sx={{
-            borderBottom: 1,
-            borderColor: 'divider',
-            '& .MuiTab-root': {
-              fontWeight: 600,
-              textTransform: 'none',
-              fontSize: '1rem',
-            },
-          }}
-        >
-          <Tab label="By Team" />
-          <Tab label="By Category" />
-          <Tab label="By Priority" />
-        </Tabs>
-      </Paper>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card
+                    elevation={0}
+                    sx={{
+                      background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(52, 211, 153, 0.05) 100%)',
+                      border: '2px solid rgba(16, 185, 129, 0.2)',
+                      borderRadius: 2,
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 12px 24px rgba(16, 185, 129, 0.15)',
+                      },
+                    }}
+                  >
+                    <CardContent sx={{ p: 2.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                        <Box
+                          sx={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 2,
+                            background: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <TrendingUp sx={{ color: 'white', fontSize: 20 }} />
+                        </Box>
+                        <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.6875rem' }}>
+                          Completed
+                        </Typography>
+                      </Box>
+                      <Typography variant="h3" sx={{ fontWeight: 800, color: '#10b981' }}>
+                        {reports.overall.repaired_count || 0}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
 
-      {/* Tab Content */}
-      {tabValue === 0 && (
-        <Grid container spacing={3}>
-          <Grid item xs={12} lg={8}>
-            <Card elevation={2}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, mb: 3 }}>
-                  Requests per Team
-                </Typography>
-                {teamChartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={400}>
-                    <BarChart data={teamChartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis
-                        dataKey="name"
-                        tick={{ fill: '#64748b', fontSize: 12 }}
-                        angle={-45}
-                        textAnchor="end"
-                        height={100}
-                      />
-                      <YAxis tick={{ fill: '#64748b', fontSize: 12 }} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#ffffff',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: 8,
-                        }}
-                      />
-                      <Legend />
-                      <Bar dataKey="new" stackId="a" fill="#06b6d4" name="New" />
-                      <Bar dataKey="inProgress" stackId="a" fill="#f59e0b" name="In Progress" />
-                      <Bar dataKey="repaired" stackId="a" fill="#10b981" name="Repaired" />
-                      <Bar dataKey="overdue" fill="#ef4444" name="Overdue" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <Box sx={{ textAlign: 'center', py: 8 }}>
-                    <Typography variant="body1" color="text.secondary">
-                      No team data available
-                    </Typography>
-                  </Box>
-                )}
-              </CardContent>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card
+                    elevation={0}
+                    sx={{
+                      background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(251, 191, 36, 0.05) 100%)',
+                      border: '2px solid rgba(245, 158, 11, 0.2)',
+                      borderRadius: 2,
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 12px 24px rgba(245, 158, 11, 0.15)',
+                      },
+                    }}
+                  >
+                    <CardContent sx={{ p: 2.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                        <Box
+                          sx={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 2,
+                            background: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Group sx={{ color: 'white', fontSize: 20 }} />
+                        </Box>
+                        <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.6875rem' }}>
+                          In Progress
+                        </Typography>
+                      </Box>
+                      <Typography variant="h3" sx={{ fontWeight: 800, color: '#f59e0b' }}>
+                        {reports.overall.in_progress_count || 0}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card
+                    elevation={0}
+                    sx={{
+                      background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(248, 113, 113, 0.05) 100%)',
+                      border: '2px solid rgba(239, 68, 68, 0.2)',
+                      borderRadius: 2,
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 12px 24px rgba(239, 68, 68, 0.15)',
+                      },
+                    }}
+                  >
+                    <CardContent sx={{ p: 2.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                        <Box
+                          sx={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 2,
+                            background: 'linear-gradient(135deg, #ef4444 0%, #f87171 100%)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <PriorityHigh sx={{ color: 'white', fontSize: 20 }} />
+                        </Box>
+                        <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.6875rem' }}>
+                          Overdue
+                        </Typography>
+                      </Box>
+                      <Typography variant="h3" sx={{ fontWeight: 800, color: '#ef4444' }}>
+                        {reports.overall.overdue_count || 0}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+            )}
+
+            {/* Tabs */}
+            <Card
+              elevation={0}
+              sx={{
+                background: 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(102, 126, 234, 0.1)',
+                borderRadius: 2,
+                mb: 3,
+              }}
+            >
+              <Tabs
+                value={tabValue}
+                onChange={handleTabChange}
+                variant="scrollable"
+                scrollButtons="auto"
+                sx={{
+                  borderBottom: '1px solid rgba(102, 126, 234, 0.1)',
+                  '& .MuiTab-root': {
+                    fontWeight: 700,
+                    textTransform: 'none',
+                    fontSize: '0.9375rem',
+                    minHeight: 56,
+                    px: 3,
+                    '&.Mui-selected': {
+                      color: '#667eea',
+                    },
+                  },
+                  '& .MuiTabs-indicator': {
+                    height: 3,
+                    borderRadius: '3px 3px 0 0',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  },
+                }}
+              >
+                <Tab label="By Team" />
+                <Tab label="By Category" />
+                <Tab label="By Priority" />
+              </Tabs>
             </Card>
-          </Grid>
-          <Grid item xs={12} lg={4}>
-            <Card elevation={2}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, mb: 3 }}>
-                  Team Summary
-                </Typography>
-                <TableContainer>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 700 }}>Team</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 700 }}>
-                          Total
-                        </TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
+
+            {/* Tab Content - By Team */}
+            {tabValue === 0 && (
+              <Grid container spacing={2.5}>
+                <Grid item xs={12} lg={8}>
+                  <Card
+                    elevation={0}
+                    sx={{
+                      background: 'rgba(255, 255, 255, 0.9)',
+                      backdropFilter: 'blur(20px)',
+                      border: '1px solid rgba(102, 126, 234, 0.1)',
+                      borderRadius: 2,
+                    }}
+                  >
+                    <CardContent sx={{ p: 3 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 3, color: '#1e293b' }}>
+                        Requests per Team
+                      </Typography>
                       {teamChartData.length > 0 ? (
-                        teamChartData.map((row, index) => (
-                          <TableRow key={index} hover>
-                            <TableCell>{row.name}</TableCell>
-                            <TableCell align="right">
-                              <Chip
-                                label={row.total}
-                                size="small"
-                                sx={{
-                                  bgcolor: '#2563eb',
-                                  color: 'white',
-                                  fontWeight: 600,
-                                }}
-                              />
-                            </TableCell>
-                          </TableRow>
-                        ))
+                        <ResponsiveContainer width="100%" height={400}>
+                          <BarChart data={teamChartData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(102, 126, 234, 0.1)" />
+                            <XAxis
+                              dataKey="name"
+                              tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
+                              angle={-45}
+                              textAnchor="end"
+                              height={100}
+                            />
+                            <YAxis tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                                border: '1px solid rgba(102, 126, 234, 0.2)',
+                                borderRadius: 8,
+                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                              }}
+                            />
+                            <Legend />
+                            <Bar dataKey="new" stackId="a" fill="#06b6d4" name="New" radius={[0, 0, 0, 0]} />
+                            <Bar dataKey="inProgress" stackId="a" fill="#f59e0b" name="In Progress" radius={[0, 0, 0, 0]} />
+                            <Bar dataKey="completed" stackId="a" fill="#10b981" name="Completed" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="overdue" fill="#ef4444" name="Overdue" radius={[4, 4, 4, 4]} />
+                          </BarChart>
+                        </ResponsiveContainer>
                       ) : (
-                        <TableRow>
-                          <TableCell colSpan={2} align="center">
-                            <Typography variant="body2" color="text.secondary">
-                              No data available
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
+                        <Box sx={{ textAlign: 'center', py: 8 }}>
+                          <Group sx={{ fontSize: 64, color: '#94a3b8', mb: 2 }} />
+                          <Typography variant="h6" sx={{ color: '#64748b', mb: 1 }}>
+                            No team data available
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                            Create teams and assign requests to see analytics
+                          </Typography>
+                        </Box>
                       )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      )}
+                    </CardContent>
+                  </Card>
+                </Grid>
 
-      {tabValue === 1 && (
-        <Grid container spacing={3}>
-          <Grid item xs={12} lg={8}>
-            <Card elevation={2}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, mb: 3 }}>
-                  Requests per Equipment Category
-                </Typography>
-                {categoryChartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={400}>
-                    <BarChart data={categoryChartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis
-                        dataKey="name"
-                        tick={{ fill: '#64748b', fontSize: 12 }}
-                        angle={-45}
-                        textAnchor="end"
-                        height={100}
-                      />
-                      <YAxis tick={{ fill: '#64748b', fontSize: 12 }} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#ffffff',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: 8,
-                        }}
-                      />
-                      <Legend />
-                      <Bar dataKey="new" stackId="a" fill="#06b6d4" name="New" />
-                      <Bar dataKey="inProgress" stackId="a" fill="#f59e0b" name="In Progress" />
-                      <Bar dataKey="repaired" stackId="a" fill="#10b981" name="Repaired" />
-                      <Bar dataKey="overdue" fill="#ef4444" name="Overdue" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <Box sx={{ textAlign: 'center', py: 8 }}>
-                    <Typography variant="body1" color="text.secondary">
-                      No category data available
-                    </Typography>
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} lg={4}>
-            <Card elevation={2}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, mb: 3 }}>
-                  Category Summary
-                </Typography>
-                <TableContainer>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 700 }}>Category</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 700 }}>
-                          Total
-                        </TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {categoryChartData.length > 0 ? (
-                        categoryChartData.map((row, index) => (
-                          <TableRow key={index} hover>
-                            <TableCell>{row.name}</TableCell>
-                            <TableCell align="right">
-                              <Chip
-                                label={row.total}
-                                size="small"
-                                sx={{
-                                  bgcolor: '#8b5cf6',
-                                  color: 'white',
-                                  fontWeight: 600,
-                                }}
-                              />
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={2} align="center">
-                            <Typography variant="body2" color="text.secondary">
-                              No data available
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      )}
-
-      {tabValue === 2 && (
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <Card elevation={2}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, mb: 3 }}>
-                  Requests by Priority
-                </Typography>
-                {priorityChartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={priorityChartData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={100}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {priorityChartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <Box sx={{ textAlign: 'center', py: 8 }}>
-                    <Typography variant="body1" color="text.secondary">
-                      No priority data available
-                    </Typography>
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Card elevation={2}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, mb: 3 }}>
-                  Priority Distribution
-                </Typography>
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 700 }}>Priority</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 700 }}>
-                          Count
-                        </TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 700 }}>
-                          Percentage
-                        </TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {priorityChartData.length > 0 ? (
-                        priorityChartData.map((row, index) => {
-                          const total = priorityChartData.reduce((sum, item) => sum + item.value, 0);
-                          const percentage = total > 0 ? ((row.value / total) * 100).toFixed(1) : 0;
-                          return (
-                            <TableRow key={index} hover>
-                              <TableCell>
-                                <Chip
-                                  label={row.name}
-                                  size="small"
-                                  sx={{
-                                    bgcolor: COLORS[index % COLORS.length],
-                                    color: 'white',
-                                    fontWeight: 600,
-                                  }}
-                                />
+                <Grid item xs={12} lg={4}>
+                  <Card
+                    elevation={0}
+                    sx={{
+                      background: 'rgba(255, 255, 255, 0.9)',
+                      backdropFilter: 'blur(20px)',
+                      border: '1px solid rgba(102, 126, 234, 0.1)',
+                      borderRadius: 2,
+                    }}
+                  >
+                    <CardContent sx={{ p: 3 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 3, color: '#1e293b' }}>
+                        Team Summary
+                      </Typography>
+                      <TableContainer>
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: 700, color: '#1e293b', borderBottom: '2px solid rgba(102, 126, 234, 0.1)' }}>Team</TableCell>
+                              <TableCell align="right" sx={{ fontWeight: 700, color: '#1e293b', borderBottom: '2px solid rgba(102, 126, 234, 0.1)' }}>
+                                Total
                               </TableCell>
-                              <TableCell align="right">{row.value}</TableCell>
-                              <TableCell align="right">{percentage}%</TableCell>
                             </TableRow>
-                          );
-                        })
+                          </TableHead>
+                          <TableBody>
+                            {teamChartData.length > 0 ? (
+                              teamChartData.map((row, index) => (
+                                <TableRow
+                                  key={index}
+                                  sx={{
+                                    '&:hover': {
+                                      bgcolor: 'rgba(102, 126, 234, 0.05)',
+                                    },
+                                  }}
+                                >
+                                  <TableCell sx={{ fontWeight: 600, color: '#1e293b' }}>{row.name}</TableCell>
+                                  <TableCell align="right">
+                                    <Chip
+                                      label={row.total}
+                                      size="small"
+                                      sx={{
+                                        bgcolor: '#667eea',
+                                        color: 'white',
+                                        fontWeight: 700,
+                                        fontSize: '0.75rem',
+                                      }}
+                                    />
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                            ) : (
+                              <TableRow>
+                                <TableCell colSpan={2} align="center" sx={{ py: 4 }}>
+                                  <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                                    No data available
+                                  </Typography>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+            )}
+
+            {/* Tab Content - By Category */}
+            {tabValue === 1 && (
+              <Grid container spacing={2.5}>
+                <Grid item xs={12} lg={8}>
+                  <Card
+                    elevation={0}
+                    sx={{
+                      background: 'rgba(255, 255, 255, 0.9)',
+                      backdropFilter: 'blur(20px)',
+                      border: '1px solid rgba(102, 126, 234, 0.1)',
+                      borderRadius: 2,
+                    }}
+                  >
+                    <CardContent sx={{ p: 3 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 3, color: '#1e293b' }}>
+                        Requests per Equipment Category
+                      </Typography>
+                      {categoryChartData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={400}>
+                          <BarChart data={categoryChartData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(102, 126, 234, 0.1)" />
+                            <XAxis
+                              dataKey="name"
+                              tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
+                              angle={-45}
+                              textAnchor="end"
+                              height={100}
+                            />
+                            <YAxis tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                                border: '1px solid rgba(102, 126, 234, 0.2)',
+                                borderRadius: 8,
+                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                              }}
+                            />
+                            <Legend />
+                            <Bar dataKey="new" stackId="a" fill="#06b6d4" name="New" radius={[0, 0, 0, 0]} />
+                            <Bar dataKey="inProgress" stackId="a" fill="#f59e0b" name="In Progress" radius={[0, 0, 0, 0]} />
+                            <Bar dataKey="completed" stackId="a" fill="#10b981" name="Completed" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="overdue" fill="#ef4444" name="Overdue" radius={[4, 4, 4, 4]} />
+                          </BarChart>
+                        </ResponsiveContainer>
                       ) : (
-                        <TableRow>
-                          <TableCell colSpan={3} align="center">
-                            <Typography variant="body2" color="text.secondary">
-                              No data available
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
+                        <Box sx={{ textAlign: 'center', py: 8 }}>
+                          <Category sx={{ fontSize: 64, color: '#94a3b8', mb: 2 }} />
+                          <Typography variant="h6" sx={{ color: '#64748b', mb: 1 }}>
+                            No category data available
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                            Add equipment categories to see analytics
+                          </Typography>
+                        </Box>
                       )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+                <Grid item xs={12} lg={4}>
+                  <Card
+                    elevation={0}
+                    sx={{
+                      background: 'rgba(255, 255, 255, 0.9)',
+                      backdropFilter: 'blur(20px)',
+                      border: '1px solid rgba(102, 126, 234, 0.1)',
+                      borderRadius: 2,
+                    }}
+                  >
+                    <CardContent sx={{ p: 3 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 3, color: '#1e293b' }}>
+                        Category Summary
+                      </Typography>
+                      <TableContainer>
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: 700, color: '#1e293b', borderBottom: '2px solid rgba(102, 126, 234, 0.1)' }}>Category</TableCell>
+                              <TableCell align="right" sx={{ fontWeight: 700, color: '#1e293b', borderBottom: '2px solid rgba(102, 126, 234, 0.1)' }}>
+                                Total
+                              </TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {categoryChartData.length > 0 ? (
+                              categoryChartData.map((row, index) => (
+                                <TableRow
+                                  key={index}
+                                  sx={{
+                                    '&:hover': {
+                                      bgcolor: 'rgba(102, 126, 234, 0.05)',
+                                    },
+                                  }}
+                                >
+                                  <TableCell sx={{ fontWeight: 600, color: '#1e293b' }}>{row.name}</TableCell>
+                                  <TableCell align="right">
+                                    <Chip
+                                      label={row.total}
+                                      size="small"
+                                      sx={{
+                                        bgcolor: '#764ba2',
+                                        color: 'white',
+                                        fontWeight: 700,
+                                        fontSize: '0.75rem',
+                                      }}
+                                    />
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                            ) : (
+                              <TableRow>
+                                <TableCell colSpan={2} align="center" sx={{ py: 4 }}>
+                                  <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                                    No data available
+                                  </Typography>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+            )}
+
+            {/* Tab Content - By Priority */}
+            {tabValue === 2 && (
+              <Grid container spacing={2.5}>
+                <Grid item xs={12} md={6}>
+                  <Card
+                    elevation={0}
+                    sx={{
+                      background: 'rgba(255, 255, 255, 0.9)',
+                      backdropFilter: 'blur(20px)',
+                      border: '1px solid rgba(102, 126, 234, 0.1)',
+                      borderRadius: 2,
+                    }}
+                  >
+                    <CardContent sx={{ p: 3 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 3, color: '#1e293b' }}>
+                        Requests by Priority
+                      </Typography>
+                      {priorityChartData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={350}>
+                          <PieChart>
+                            <Pie
+                              data={priorityChartData}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                              outerRadius={120}
+                              fill="#8884d8"
+                              dataKey="value"
+                            >
+                              {priorityChartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <Box sx={{ textAlign: 'center', py: 8 }}>
+                          <PriorityHigh sx={{ fontSize: 64, color: '#94a3b8', mb: 2 }} />
+                          <Typography variant="h6" sx={{ color: '#64748b', mb: 1 }}>
+                            No priority data available
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                            Create requests with priorities to see analytics
+                          </Typography>
+                        </Box>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Card
+                    elevation={0}
+                    sx={{
+                      background: 'rgba(255, 255, 255, 0.9)',
+                      backdropFilter: 'blur(20px)',
+                      border: '1px solid rgba(102, 126, 234, 0.1)',
+                      borderRadius: 2,
+                    }}
+                  >
+                    <CardContent sx={{ p: 3 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 3, color: '#1e293b' }}>
+                        Priority Distribution
+                      </Typography>
+                      <TableContainer>
+                        <Table>
+                          <TableHead>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: 700, color: '#1e293b', borderBottom: '2px solid rgba(102, 126, 234, 0.1)' }}>Priority</TableCell>
+                              <TableCell align="right" sx={{ fontWeight: 700, color: '#1e293b', borderBottom: '2px solid rgba(102, 126, 234, 0.1)' }}>
+                                Count
+                              </TableCell>
+                              <TableCell align="right" sx={{ fontWeight: 700, color: '#1e293b', borderBottom: '2px solid rgba(102, 126, 234, 0.1)' }}>
+                                Percentage
+                              </TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {priorityChartData.length > 0 ? (
+                              priorityChartData.map((row, index) => {
+                                const total = priorityChartData.reduce((sum, item) => sum + item.value, 0);
+                                const percentage = total > 0 ? ((row.value / total) * 100).toFixed(1) : 0;
+                                return (
+                                  <TableRow
+                                    key={index}
+                                    sx={{
+                                      '&:hover': {
+                                        bgcolor: 'rgba(102, 126, 234, 0.05)',
+                                      },
+                                    }}
+                                  >
+                                    <TableCell>
+                                      <Chip
+                                        label={row.name}
+                                        size="small"
+                                        sx={{
+                                          bgcolor: COLORS[index % COLORS.length],
+                                          color: 'white',
+                                          fontWeight: 700,
+                                          fontSize: '0.75rem',
+                                        }}
+                                      />
+                                    </TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 600, color: '#1e293b' }}>
+                                      {row.value}
+                                    </TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 600, color: '#1e293b' }}>
+                                      {percentage}%
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })
+                            ) : (
+                              <TableRow>
+                                <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
+                                  <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                                    No data available
+                                  </Typography>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+            )}
+          </Box>
+        </Fade>
       )}
     </Layout>
   );

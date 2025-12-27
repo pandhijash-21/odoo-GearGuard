@@ -9,7 +9,11 @@ import Dashboard from './pages/Dashboard';
 import EquipmentPage from './pages/EquipmentPage';
 import EquipmentDetailPage from './pages/EquipmentDetailPage';
 import EquipmentEditPage from './pages/EquipmentEditPage';
+import CreateEquipmentPage from './pages/CreateEquipmentPage';
 import TeamsPage from './pages/TeamsPage';
+import CreateTeamPage from './pages/CreateTeamPage';
+import EditTeamPage from './pages/EditTeamPage';
+import ManageTeamMembersPage from './pages/ManageTeamMembersPage';
 import RequestsPage from './pages/RequestsPage';
 import CalendarPage from './pages/CalendarPage';
 import CreateRequestPage from './pages/CreateRequestPage';
@@ -217,6 +221,14 @@ const AppRoutes = () => {
         }
       />
       <Route
+        path="/equipment/create"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <CreateEquipmentPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/equipment/:id"
         element={
           <ProtectedRoute allowedRoles={['admin']}>
@@ -237,6 +249,38 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={['admin']}>
             <TeamsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teams/create"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <CreateTeamPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teams/:teamId/edit"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <EditTeamPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teams/:teamId/manage"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <ManageTeamMembersPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute allowedRoles={['admin', 'manager']}>
+            <ReportsPage />
           </ProtectedRoute>
         }
       />
