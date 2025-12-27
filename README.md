@@ -1,8 +1,16 @@
 # GearGuard - Maintenance Management System
 
+A comprehensive maintenance tracking system built with React, PHP, and MySQL for managing equipment, maintenance requests, teams, and analytics.
+
 ## 🚀 Quick Start
 
-### Backend Setup (PHP)
+### Prerequisites
+- PHP 8.x
+- MySQL/MariaDB (XAMPP recommended)
+- Node.js 16+ and npm
+- XAMPP (for MySQL on port 3307)
+
+### Backend Setup
 
 **Option 1: XAMPP (Recommended)**
 ```powershell
@@ -21,9 +29,28 @@ php -S localhost:8000
 
 Backend URL: `http://localhost/gear_guard/backend` (XAMPP) or `http://localhost:8000` (PHP server)
 
-### Frontend Setup (React)
+### Database Setup
+
+1. Create database in phpMyAdmin:
+   ```sql
+   CREATE DATABASE gear_guard;
+   ```
+
+2. Import schema:
+   ```sql
+   -- Import gear_guard.sql file
+   ```
+
+3. Update database configuration in `backend/config/database.php`:
+   - Port: 3307 (XAMPP default)
+   - Username: root
+   - Password: (empty by default)
+
+### Frontend Setup
+
 ```bash
 cd frontend
+npm install
 npm start
 ```
 
@@ -34,13 +61,13 @@ Frontend URL: `http://localhost:3000`
 ## 🔐 Authentication & Roles
 
 ### User Roles:
-- **Admin**: Full access (equipment, teams, requests, calendar, users)
-- **Manager**: Manage requests, calendar, view teams
+- **Admin**: Full access (equipment, teams, requests, calendar, reports, users)
+- **Manager**: Manage requests, calendar, view teams, reports
 - **Technician**: View and work on assigned requests, calendar
-- **Employee**: Limited access (create requests only)
+- **Employee**: Create and view own requests
 
-### Default Login (for development):
-- Any email/password works (no password checking yet)
+### Default Login:
+- Use any email/password from the database
 - Users must exist in database with roles: `admin`, `manager`, `technician`, `employee`
 
 ---
@@ -55,36 +82,34 @@ GearGuard/
 │   │   ├── equipment/   # Equipment CRUD
 │   │   ├── teams/       # Teams CRUD
 │   │   ├── requests/    # Requests CRUD
+│   │   ├── reports/     # Analytics & Reports
 │   │   └── users/       # Users list
 │   ├── config/          # Database config
 │   └── utils/           # Helper functions
 ├── frontend/            # React application
 │   └── src/
-│       ├── components/
-│       │   ├── Auth/    # Login component
-│       │   ├── Layout/  # Header, Layout
-│       │   └── Requests/# Kanban board
+│       ├── components/  # React components
 │       ├── context/     # Auth context
 │       ├── pages/       # Page components
 │       └── services/    # API services
-└── gear_guard_mysql_schema.sql
+└── gear_guard.sql      # Database schema
 ```
 
 ---
 
-## 🎯 Features Implemented
+## 🎯 Features
 
-- ✅ Authentication system (login/logout)
-- ✅ Role-based access control
-- ✅ Protected routes
+- ✅ Authentication system with role-based access control
+- ✅ Protected routes and navigation
 - ✅ Modern UI with Material-UI
-- ✅ Kanban board with drag & drop
+- ✅ Kanban board with drag & drop for requests
 - ✅ Dashboard with statistics
+- ✅ Equipment management (CRUD)
+- ✅ Teams management (CRUD)
+- ✅ Maintenance requests (Create, View, Update status)
+- ✅ Calendar view for preventive maintenance
+- ✅ Reports & Analytics (By Team, Category, Priority)
 - ✅ Responsive design
-- ⏳ Equipment management (admin only)
-- ⏳ Teams management (admin only)
-- ⏳ Calendar view
-- ⏳ Request forms
 
 ---
 
@@ -98,43 +123,47 @@ GearGuard/
 - `GET /api/equipment/` - List all
 - `GET /api/equipment/read.php?id={id}` - Get by ID
 - `POST /api/equipment/` - Create
+- `PUT /api/equipment/update.php?id={id}` - Update
 
 ### Requests
-- `GET /api/requests/` - List (with filters: stage, equipment_id, team_id)
+- `GET /api/requests/` - List (with filters: stage, equipment_id, team_id, assigned_to, created_by)
+- `GET /api/requests/read.php?id={id}` - Get by ID
 - `POST /api/requests/create.php` - Create
 - `PUT /api/requests/update_stage.php` - Update stage
 
 ### Teams (Admin)
 - `GET /api/teams/` - List all
+- `GET /api/teams/members.php?team_id={id}` - Get team members
 - `POST /api/teams/` - Create
+- `PUT /api/teams/update.php?id={id}` - Update
+- `DELETE /api/teams/delete.php?id={id}` - Delete
+
+### Reports (Admin/Manager)
+- `GET /api/reports/` - Get all reports (by team, category, priority, overall stats)
 
 ### Users (Admin)
 - `GET /api/users/` - List all (filter by role)
 
 ---
 
-## 🎨 UI Improvements
+## 🎨 Tech Stack
 
-- Modern Material-UI design
-- Clean, professional interface
-- Role-based navigation
-- Improved Kanban board with better cards
-- Dashboard with statistics and quick actions
-- Responsive layout
-- Better color scheme and typography
+- **Frontend**: React.js, Material-UI, Recharts, FullCalendar.js, @dnd-kit
+- **Backend**: PHP 8.x, PDO
+- **Database**: MySQL/MariaDB
+- **Server**: XAMPP or PHP Built-in Server
 
 ---
 
-## 📝 Next Steps
+## 📝 Notes
 
-1. Add sample users to database
-2. Complete Equipment CRUD pages
-3. Complete Teams management
-4. Add Calendar view
-5. Add Request creation form
-6. Add filters and search
-7. Add user profile page
+- Make sure MySQL is running on port 3307 before starting!
+- Backend CORS is configured for `http://localhost:3000`
+- Token-based authentication (simplified for demo - use JWT in production)
+- Password hashing using PHP's `password_hash()` and `password_verify()`
 
 ---
 
-**Note:** Make sure MySQL is running on port 3307 before starting!
+## 📄 License
+
+This project is developed for hackathon purposes.

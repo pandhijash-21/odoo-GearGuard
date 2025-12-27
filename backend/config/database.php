@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 $host = 'localhost';
-$port = 3306;
+$port = 3307;
 $dbname = 'gear_guard';
 $username = 'root';
 $password = '';

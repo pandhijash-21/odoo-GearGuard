@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Container,
   Paper,
@@ -227,8 +227,21 @@ const Login = () => {
           </form>
 
           <Box sx={{ mt: 3, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              Demo Credentials: admin@test.com / password
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Don't have an account?{' '}
+              <Link
+                to="/signup"
+                style={{
+                  color: '#667eea',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                }}
+              >
+                Sign Up
+              </Link>
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', mt: 1 }}>
+              Demo: admin@test.com / password
             </Typography>
           </Box>
         </Paper>

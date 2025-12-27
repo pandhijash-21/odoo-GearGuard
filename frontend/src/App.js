@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './components/Auth/Login';
+import Signup from './components/Auth/Signup';
 import Dashboard from './pages/Dashboard';
 import EquipmentPage from './pages/EquipmentPage';
 import EquipmentDetailPage from './pages/EquipmentDetailPage';
@@ -18,6 +19,7 @@ import RequestsPage from './pages/RequestsPage';
 import CalendarPage from './pages/CalendarPage';
 import CreateRequestPage from './pages/CreateRequestPage';
 import ReportsPage from './pages/ReportsPage';
+import UsersPage from './pages/UsersPage';
 
 const theme = createTheme({
   palette: {
@@ -204,6 +206,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login />} />
+      <Route path="/signup" element={user ? <Navigate to="/dashboard" /> : <Signup />} />
       <Route
         path="/dashboard"
         element={
@@ -305,6 +308,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <CreateRequestPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/users"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <UsersPage />
           </ProtectedRoute>
         }
       />

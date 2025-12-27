@@ -72,6 +72,7 @@ const Header = () => {
     { label: 'Reports', path: '/reports', icon: <Assessment />, roles: ['admin', 'manager'] },
     { label: 'Equipment', path: '/equipment', icon: <Build />, roles: ['admin'] },
     { label: 'Teams', path: '/teams', icon: <Group />, roles: ['admin'] },
+    { label: 'Users', path: '/users', icon: <Person />, roles: ['admin'] },
   ];
 
   const filteredNavItems = navItems.filter(item =>
